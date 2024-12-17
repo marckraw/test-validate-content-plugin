@@ -5,12 +5,26 @@ import AssetSelector from './AssetSelector'
 import { FunctionComponent } from 'react'
 import { useFieldPlugin } from '@storyblok/field-plugin/react'
 
+
+
 const FieldPlugin: FunctionComponent = () => {
   const { type, data, actions } = useFieldPlugin({
     enablePortalModal: true,
-    validateContent: (content: unknown) => ({
-      content: typeof content === 'number' ? content : 0,
-    }),
+    validateContent: (content: unknown) => {
+      // What exactly this function is for ? I understand I can get the content before it will be initialized, so i'm testing agains this here
+      if (typeof content === 'string') {
+        return {
+          content,
+        }
+      } else {
+        // In this case, if the content stored in storyblok is not a string, we will throw / return an error - that was taken from the docs when i first created this plugin
+        // i was expecting then, this to raise plugin.type === 'error' so i can react on that, but instead it doesnt really do noithing, and error is just not being passed
+        return {
+          content,
+          error: "content is expected to be a number",
+        }
+      }
+    },
   })
 
   if (type !== 'loaded') {
@@ -20,6 +34,10 @@ const FieldPlugin: FunctionComponent = () => {
   const closeModal = () => {
     actions.setModalOpen(false)
   }
+
+  console.log("###############")
+  console.log(type) // this will never be 'error' which I was expecting will happen when i pass the error in the validateContent function
+  console.log("###############")
 
   return (
     <div>
@@ -48,8 +66,8 @@ const FieldPlugin: FunctionComponent = () => {
       )}
       <div className="container">
         <Counter
-          count={data.content}
-          onIncrease={() => actions.setContent(data.content + 1)}
+          count={typeof data.content === 'number' ? data.content : 0}
+          onIncrease={() => actions.setContent(typeof data.content === 'number' ? data.content + 1 : 1)}
         />
         <hr />
         <ModalToggle
